@@ -1,20 +1,18 @@
-// Service worker mínimo: guarda os arquivos do app para abrir mesmo sem rede.
-// Os dados dos livros vêm do Firestore, que cuida do próprio cache.
-const CACHE = 'estante-bruna-v1';
-const SHELL = ['./', 'index.html', 'manifest.json', 'logo.png', 'icon-192.png'];
+// Service worker mínimo, no mesmo formato do Painel de Estudos.
+// O handler de fetch existe para o Chrome oferecer a instalação do app.
+// Tenta a rede primeiro e, se falhar, usa o que já tiver sido guardado.
+const CACHE = 'estante-bruna-v2';
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
@@ -24,9 +22,9 @@ self.addEventListener('fetch', (e) => {
     fetch(e.request)
       .then((res) => {
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
         return res;
       })
-      .catch(() => caches.match(e.request).then((m) => m || caches.match('index.html')))
+      .catch(() => caches.match(e.request))
   );
 });
