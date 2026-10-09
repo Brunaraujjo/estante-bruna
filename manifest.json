@@ -1,7 +1,8 @@
 {
+  "id": "/estante-bruna/estante-v3",
   "name": "Estante Bruna",
   "short_name": "Estante",
-  "start_url": "./index.html",
+  "start_url": "./index.html?app=estante",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0f6b68",
