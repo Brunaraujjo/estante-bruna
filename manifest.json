@@ -1,9 +1,10 @@
 {
+  "id": "/estante-bruna/",
   "name": "Estante Bruna",
   "short_name": "Estante",
   "description": "Meus livros, o plano de leitura mês a mês e o progresso de cada um.",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/estante-bruna/",
+  "scope": "/estante-bruna/",
   "display": "standalone",
   "background_color": "#0f6b68",
   "theme_color": "#0f6b68",
