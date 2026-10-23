@@ -17,7 +17,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: cabeçalho com logo, três abas (Lendo, Plano, Estante), conteúdo em coluna única de até 960px.
    Cada livro tem uma "capa" em cor de lombada; o peso da leitura aparece como três pontos. */
@@ -27,9 +27,9 @@
   --warn:#8a4b00; --warn-bg:#fff1dc; --ok:#1f7a4d; --ok-bg:#dff3e8;
   --sp0:#1d4ed8; --sp1:#0f766e; --sp2:#b45309; --sp3:#9d174d; --sp4:#4d7c0f; --sp5:#6d28d9;
   --sp-ink:#ffffff;
-  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
-  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --f-display:"Quicksand","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Quicksand",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Quicksand",system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -43,7 +43,7 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-weight:500;font-size:15px;line-height:1.45;padding-inline:16px;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
 button,input,select,textarea{font:inherit;color:inherit}
 .app{max-width:960px;margin-inline:auto;padding-block:20px 72px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -68,6 +68,9 @@ h1{font-family:var(--f-display);font-weight:700;font-size:1.75rem;letter-spacing
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.small{padding:4px 10px;min-height:30px;font-size:.85rem}
+.mv{display:inline-flex;gap:4px}
+.mv .btn{min-width:34px;padding:4px 0}
+.btn:disabled{opacity:.35;cursor:default}
 .btn.danger{color:var(--warn);border-color:var(--warn)}
 .btn:disabled{opacity:.55;cursor:default}
 .link{background:none;border:0;padding:0;color:var(--ink-2);text-decoration:underline;cursor:pointer;font-size:.8rem}
@@ -159,6 +162,7 @@ h1{font-family:var(--f-display);font-weight:700;font-size:1.75rem;letter-spacing
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg)}
 .field textarea{min-height:80px;resize:vertical}
 .sheet .foot{display:flex;gap:8px;justify-content:space-between;margin-top:16px;flex-wrap:wrap}
+#ovImport .foot{position:sticky;bottom:0;background:var(--surface);padding-block:10px 2px;border-top:1px solid var(--line)}   /* botões sempre à vista, mesmo com lista longa */
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:.9rem;z-index:30;max-width:calc(100% - 32px)}
 </style>
 </head>
@@ -183,6 +187,7 @@ h1{font-family:var(--f-display);font-weight:700;font-size:1.75rem;letter-spacing
       <h1>Estante Bruna</h1>
       <p class="sub" id="sub"></p>
     </div>
+    <button class="btn" data-action="imp-open">Importar lista</button>
     <button class="btn primary" data-action="add">Novo livro</button>
   </header>
 
@@ -224,6 +229,24 @@ h1{font-family:var(--f-display);font-weight:700;font-size:1.75rem;letter-spacing
     </div>
   </div>
 </div>
+<!-- Importar lista: cadastra vários livros de uma vez a partir de texto -->
+<div class="overlay" id="ovImport" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="impTitle">
+    <h2 id="impTitle">Importar lista</h2>
+    <p class="author" style="margin:0 0 10px">Uma linha por livro, campos separados por ponto e vírgula:<br>
+      <b>Título; Autor; Peso; Mês; Status; Nota; Lido em</b><br>
+      Só o título é obrigatório. Peso: leve, médio ou denso. Mês: "dezembro 2026", "12/2026" ou vazio. Status: na fila, lendo, lido ou pausado. Lido em: 2024, 2024-05 ou 2024-05-17.</p>
+    <div class="field"><label for="imp-text">Lista</label>
+      <textarea id="imp-text" spellcheck="false" style="min-height:150px;font-size:.88rem" placeholder="Minimalismo digital; Cal Newport; médio; ; na fila&#10;Ikigai; Héctor García e Francesc Miralles; leve; ; lido; 5; 2024&#10;Hamnet; Maggie O'Farrell; médio; fevereiro 2027"></textarea></div>
+    <div id="imp-preview" style="margin-top:12px"></div>
+    <div class="foot">
+      <button class="btn" data-action="imp-cancel">Cancelar</button>
+      <span style="flex:1"></span>
+      <button class="btn" data-action="imp-check">Conferir</button>
+      <button class="btn primary" id="imp-do" data-action="imp-do" disabled>Importar</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script type="module">
@@ -254,10 +277,10 @@ const SEED = [
   ["colecionador-de-lagrimas","O Colecionador de Lágrimas","","reading","2026-10","leve",0,""],
   ["homem-mais-rico-babilonia","O Homem Mais Rico da Babilônia","George S. Clason","queue","2026-10","leve",0,"Combina com Do Mil ao Milhão."],
   ["floricultura-toquio","A pequena floricultura de Tóquio","Yukihisa Yamamoto","queue","2026-11","leve",272,""],
-  ["factfulness","Factfulness","Hans Rosling, Ola Rosling e Anna Rosling Rönnlund","queue","2026-11","medio",360,""],
+  ["factfulness","Factfulness","Hans Rosling, Ola Rosling e Anna Rosling Rönnlund","queue","2026-12","medio",360,""],
   ["coragem-nao-agradar","A coragem de não agradar","Ichiro Kishimi e Fumitake Koga","queue","2026-11","leve",0,""],
   ["conversando-com-deus","Conversando com Deus","Neale Donald Walsch","queue","2026-11","medio",0,"Ler aos poucos, em paralelo com um livro leve."],
-  ["direita-esquerda","Direita e esquerda","Norberto Bobbio","queue","2026-12","medio",187,""],
+  ["direita-esquerda","Direita e esquerda","Norberto Bobbio","queue","2026-11","medio",187,""],
   ["pequena-loja-milagres","A pequena loja dos grandes milagres","Keigo Higashino","queue","2026-12","leve",0,""],
   ["manual-persuasao-fbi","Manual de persuasão do FBI","Jack Schafer e Marvin Karlins","queue","2026-12","medio",256,"Pode ser lido por capítulos."],
   ["apple-china","A Apple na China","Patrick McGee","queue","2027-01","denso",0,"Ler sozinho, sem outro livro denso junto."],
@@ -341,6 +364,18 @@ function patch(id, p){
   const b = byId(id); if(!b) return;
   return saveBook(Object.assign({}, b, p));
 }
+// Sobe/desce um livro dentro do mesmo mês (ou do grupo "Sem mês"), trocando o campo "order" com o vizinho.
+function moveBook(id, dir){
+  const b = byId(id); if(!b) return;
+  const group = books.filter((x) => x.status !== 'done' && (x.month || '') === (b.month || '')).sort(sortBooks);
+  const i = group.findIndex((x) => x.id === id), j = i + dir;
+  if(i < 0 || j < 0 || j >= group.length) return;
+  const other = group[j];
+  let ob = b.order || 0, oo = other.order || 0;
+  if(ob === oo){ oo = ob + (dir > 0 ? 1 : -1); }   // desempate raro: mesma posição
+  patch(b.id, {order: oo});
+  patch(other.id, {order: ob});
+}
 async function seedIfNeeded(){
   const flag = doc(fs, 'users', uid, 'settings', 'estante');
   const s = await getDoc(flag);
@@ -414,9 +449,13 @@ function monthSelect(b){
   const opts = '<option value="">Sem mês</option>' + monthKeys().map((m) => `<option value="${m}"${b.month === m ? ' selected' : ''}>${monthLabel(m)}</option>`).join('');
   return `<select data-month="${esc(b.id)}" aria-label="Mês de ${esc(b.title)}">${opts}</select>`;
 }
-function planRow(b){
+function moveBtns(b, i, n){
+  return `<span class="mv"><button class="btn small" data-action="up" data-id="${esc(b.id)}" aria-label="Subir ${esc(b.title)}"${i === 0 ? ' disabled' : ''}>↑</button>` +
+    `<button class="btn small" data-action="down" data-id="${esc(b.id)}" aria-label="Descer ${esc(b.title)}"${i === n - 1 ? ' disabled' : ''}>↓</button></span>`;
+}
+function planRow(b, i, n){
   return `<div class="rowitem">${capa(b,true)}<div class="txt"><button class="clickable" data-action="edit" data-id="${esc(b.id)}"><span class="title" style="font-size:.98rem">${esc(b.title)}</span><span class="author" style="display:block">${esc(b.author||'')}</span></button></div>` +
-    `<div class="side">${weightEl(b.weight)}${b.status !== 'queue' ? `<span class="pill ${b.status}">${STATUS[b.status]}</span>` : ''}${monthSelect(b)}</div></div>`;
+    `<div class="side">${weightEl(b.weight)}${b.status !== 'queue' ? `<span class="pill ${b.status}">${STATUS[b.status]}</span>` : ''}${monthSelect(b)}${moveBtns(b, i, n)}</div></div>`;
 }
 function viewPlano(){
   const open = books.filter((b) => b.status !== 'done').sort(sortBooks);
@@ -427,9 +466,9 @@ function viewPlano(){
     const g = groups[m], dense = g.filter((b) => b.weight === 'denso').length;
     return `<section class="month"><div class="mh"><h3>${monthLabel(m)}</h3><span>${g.length}${g.length === 1 ? ' livro' : ' livros'}</span>` +
       (dense >= 2 ? `<span class="pill paused">${dense} densos no mesmo mês</span>` : '') +
-      `</div><div class="list">${g.map(planRow).join('')}</div></section>`;
+      `</div><div class="list">${g.map((x, i) => planRow(x, i, g.length)).join('')}</div></section>`;
   }).join('');
-  if(loose.length) h += `<section class="month"><div class="mh"><h3>Sem mês definido</h3><span>${loose.length}${loose.length === 1 ? ' livro' : ' livros'}</span></div><div class="list">${loose.map(planRow).join('')}</div></section>`;
+  if(loose.length) h += `<section class="month"><div class="mh"><h3>Sem mês definido</h3><span>${loose.length}${loose.length === 1 ? ' livro' : ' livros'}</span></div><div class="list">${loose.map((x, i) => planRow(x, i, loose.length)).join('')}</div></section>`;
   return h;
 }
 function viewEstante(){
@@ -505,12 +544,127 @@ function submitSheet(){
   saveBook(b); closeSheet();
 }
 
+/* ---------- importar lista ----------
+   Cada linha vira um livro: Título; Autor; Peso; Mês; Status; Nota; Lido em.
+   Primeiro "Conferir" (mostra o que será criado e o que será ignorado), depois "Importar" grava tudo de uma vez. */
+let importRows = [];
+// Texto sem acento, minúsculo e sem espaços sobrando: serve para comparar "Médio" com "medio", por exemplo.
+const norm = (s) => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+// Chave para detectar livro repetido: ignora acento, pontuação e maiúsculas.
+const titleKey = (s) => norm(s).replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+const slugify = (s) => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+const MON_FULL = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const W_MAP = {leve:'leve', medio:'medio', media:'medio', denso:'denso', densa:'denso'};
+const S_MAP = {'na fila':'queue', fila:'queue', lendo:'reading', lido:'done', lida:'done', concluido:'done', pausado:'paused'};
+
+// Devolve '' (sem mês), 'AAAA-MM' ou null (não entendi). Aceita "2026-12", "12/2026", "dezembro 2026", "dez/26" e "dezembro".
+// Sem ano, vale o próximo mês com esse nome a partir de hoje.
+function parseMonth(raw){
+  const s = norm(raw);
+  if(!s || s === '-' || s === 'sem mes' || s === 'sem') return '';
+  let m, y, r;
+  if((r = s.match(/^(\d{4})-(\d{1,2})$/))){ y = +r[1]; m = +r[2] - 1; }
+  else if((r = s.match(/^(\d{1,2})\/(\d{4})$/))){ m = +r[1] - 1; y = +r[2]; }
+  else if((r = s.match(/^([a-z]+)(?:\s*(?:de|\/|-)?\s*(\d{2}|\d{4}))?$/))){
+    m = MON_FULL.findIndex((n) => n === r[1] || n.slice(0, 3) === r[1]);
+    if(m < 0) return null;
+    if(r[2]){ y = +r[2]; if(y < 100) y += 2000; }
+    else { const now = new Date(); y = now.getFullYear(); if(m < now.getMonth()) y++; }
+  } else return null;
+  if(!(m >= 0 && m <= 11) || y < 2020 || y > 2040) return null;
+  return y + '-' + String(m + 1).padStart(2, '0');
+}
+
+function parseImport(text){
+  const rows = [], errors = [], dups = [];
+  const seen = new Set(books.map((b) => titleKey(b.title)));
+  let order = books.reduce((m, x) => Math.max(m, x.order || 0), 0);
+  String(text).split(/\r?\n/).forEach((line, i) => {
+    const raw = line.trim();
+    if(!raw || raw[0] === '#') return;
+    const f = raw.split(/[;|\t]/).map((x) => x.trim());
+    const title = f[0];
+    if(norm(title) === 'titulo') return;                 // linha de cabeçalho, se vier de uma planilha
+    const bad = [];
+    if(!title) bad.push('falta o título');
+    const wRaw = norm(f[2]), weight = wRaw ? W_MAP[wRaw] : 'medio';
+    if(!weight) bad.push('peso "' + f[2] + '" não reconhecido (use leve, médio ou denso)');
+    const month = parseMonth(f[3]);
+    if(month === null) bad.push('mês "' + f[3] + '" não reconhecido (ex.: dezembro 2026)');
+    const sRaw = norm(f[4]), status = sRaw ? S_MAP[sRaw] : 'queue';
+    if(!status) bad.push('status "' + f[4] + '" não reconhecido (use na fila, lendo, lido ou pausado)');
+    const rating = f[5] ? parseInt(f[5], 10) : 0;
+    if(f[5] && !(rating >= 1 && rating <= 5)) bad.push('nota "' + f[5] + '" deve ser de 1 a 5');
+    const fin = f[6] || '';
+    if(fin && !/^\d{4}(-\d{2}(-\d{2})?)?$/.test(fin)) bad.push('data "' + fin + '" deve ser 2024, 2024-05 ou 2024-05-17');
+    if(bad.length){ errors.push('Linha ' + (i + 1) + ' (' + (title || '—') + '): ' + bad.join('; ') + '.'); return; }
+    const key = titleKey(title);
+    if(seen.has(key)){ dups.push(title); return; }
+    seen.add(key);
+    const b = {title, author: f[1] || '', weight, month, status, rating: rating || 0, notes: '', pages: 0, read: 0, order: ++order};
+    if(status === 'reading') b.startedAt = todayISO();
+    if(status === 'done' && fin) b.finishedAt = fin;     // sem data, o livro não entra em "Lidos em <ano>"
+    rows.push(b);
+  });
+  if(rows.length > 200){ errors.push('Muitas linhas de uma vez (' + rows.length + '). Divida a lista em partes de até 200.'); return {rows: [], errors, dups}; }
+  return {rows, errors, dups};
+}
+
+const previewRow = (b) =>
+  `<div class="rowitem">${capa(b,true)}<div class="txt"><div class="title" style="font-size:.95rem">${esc(b.title)}</div><div class="author">${esc(b.author||'')}</div></div>` +
+  `<div class="side">${weightEl(b.weight)}<span class="pill">${b.month ? esc(monthLabel(b.month)) : 'Sem mês'}</span><span class="pill ${b.status}">${STATUS[b.status]}</span></div></div>`;
+
+function openImport(){
+  $('imp-text').value = ''; $('imp-preview').innerHTML = ''; importRows = [];
+  $('imp-do').disabled = true; $('imp-do').textContent = 'Importar';
+  $('ovImport').hidden = false;
+  setTimeout(() => $('imp-text').focus(), 30);
+}
+function closeImport(){ $('ovImport').hidden = true; importRows = []; }
+function checkImport(){
+  const r = parseImport($('imp-text').value);
+  importRows = r.rows;
+  let h = '';
+  if(r.errors.length) h += `<div class="notice">Estas linhas serão ignoradas. Corrija e confira de novo para incluí-las:<br>${r.errors.map(esc).join('<br>')}</div>`;
+  if(r.dups.length) h += `<div class="notice info">Já estão na estante e foram ignorados: ${r.dups.map(esc).join('; ')}.</div>`;
+  if(r.rows.length) h += `<div class="h2" style="margin:8px 0">${r.rows.length} para importar</div><div class="list">${r.rows.map(previewRow).join('')}</div>`;
+  else if(!r.errors.length && !r.dups.length) h = '<div class="empty">Nenhum livro encontrado no texto.</div>';
+  $('imp-preview').innerHTML = h;
+  $('imp-do').disabled = !r.rows.length;
+  $('imp-do').textContent = r.rows.length ? 'Importar ' + r.rows.length : 'Importar';
+}
+async function doImport(){
+  if(!importRows.length || !uid) return;
+  const btn = $('imp-do'); btn.disabled = true;
+  try{
+    const used = new Set(books.map((b) => b.id));
+    const batch = writeBatch(fs);                         // grava todos os livros numa operação só
+    importRows.forEach((b) => {
+      let id;
+      do{ id = (slugify(b.title) || 'livro') + '-' + Math.random().toString(36).slice(2, 6); } while(used.has(id));
+      used.add(id);
+      batch.set(doc(fs, 'users', uid, 'books', id), clean(b));
+    });
+    await batch.commit();
+    const n = importRows.length;
+    closeImport();
+    toast(n + (n === 1 ? ' livro importado.' : ' livros importados.'));
+  }catch(e){
+    toast('Não foi possível importar' + (e && e.code ? ' (' + e.code + ')' : '') + '.');
+    btn.disabled = false;
+  }
+}
+
 /* ---------- eventos ---------- */
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]'); if(!el) return;
   const a = el.getAttribute('data-action'), id = el.getAttribute('data-id');
   if(a === 'tab'){ tab = el.getAttribute('data-tab'); try{ localStorage.setItem(LS_TAB, tab); }catch(x){} render(); }
   else if(a === 'filter'){ filter = el.getAttribute('data-f'); render(); }
+  else if(a === 'imp-open') openImport();
+  else if(a === 'imp-cancel') closeImport();
+  else if(a === 'imp-check') checkImport();
+  else if(a === 'imp-do') doImport();
   else if(a === 'add') openSheet(null);
   else if(a === 'edit') openSheet(id);
   else if(a === 'cancel') closeSheet();
@@ -524,6 +678,8 @@ document.addEventListener('click', (e) => {
     const bk = byId(id); patch(id, {status:'reading', startedAt: (bk && bk.startedAt) || todayISO()});
     if(n >= LIMIT) toast('Você já tinha ' + n + ' livros em andamento.');
   }
+  else if(a === 'up') moveBook(id, -1);
+  else if(a === 'down') moveBook(id, 1);
   else if(a === 'pause') patch(id, {status:'paused'});
   else if(a === 'finish'){ const f = byId(id); patch(id, {status:'done', finishedAt: todayISO(), read: f && f.pages ? f.pages : (f && f.read) || 0}); toast('Livro concluído.'); }
 });
@@ -535,8 +691,15 @@ document.addEventListener('change', (e) => {
     patch(b.id, {read: Math.max(0, Math.min(parseInt(t.value, 10) || 0, b.pages || 1e6))});
   }
 });
-document.addEventListener('input', (e) => { if(e.target.id === 'q'){ queryText = e.target.value; render(); } });
-document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !$('overlay').hidden) closeSheet(); });
+document.addEventListener('input', (e) => {
+  if(e.target.id === 'q'){ queryText = e.target.value; render(); }
+  else if(e.target.id === 'imp-text'){ importRows = []; $('imp-preview').innerHTML = ''; $('imp-do').disabled = true; $('imp-do').textContent = 'Importar'; }  // texto mudou: conferir de novo
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key !== 'Escape') return;
+  if(!$('overlay').hidden) closeSheet();
+  else if(!$('ovImport').hidden) closeImport();
+});
 $('overlay').addEventListener('click', (e) => { if(e.target === $('overlay')) closeSheet(); });
 
 /* ---------- login ---------- */
